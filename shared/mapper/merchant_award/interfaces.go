@@ -1,0 +1,26 @@
+package merchantawardapimapper
+
+import (
+	pbmerchant_award "github.com/MamangRust/microservice-ecommerce-grpc-pb/merchant_award"
+	"github.com/MamangRust/microservice-ecommerce-shared/domain/response"
+)
+
+type MerchantAwardBaseResponseMapper interface {
+	ToResponseMerchantAward(MerchantAward *pbmerchant_award.MerchantAwardResponse) *response.MerchantAwardResponse
+	ToResponsesMerchantAward(MerchantAwards []*pbmerchant_award.MerchantAwardResponse) []*response.MerchantAwardResponse
+	ToApiResponseMerchantAward(pbResponse *pbmerchant_award.ApiResponseMerchantAward) *response.ApiResponseMerchantAward
+}
+
+type MerchantAwardQueryResponseMapper interface {
+	MerchantAwardBaseResponseMapper
+	ToApiResponsesMerchantAward(pbResponse *pbmerchant_award.ApiResponsesMerchantAward) *response.ApiResponsesMerchantAward
+	ToApiResponsePaginationMerchantAward(pbResponse *pbmerchant_award.ApiResponsePaginationMerchantAward) *response.ApiResponsePaginationMerchantAward
+	ToApiResponsePaginationMerchantAwardDeleteAt(pbResponse *pbmerchant_award.ApiResponsePaginationMerchantAwardDeleteAt) *response.ApiResponsePaginationMerchantAwardDeleteAt
+}
+
+type MerchantAwardCommandResponseMapper interface {
+	MerchantAwardBaseResponseMapper
+	ToResponseMerchantAwardDeleteAt(MerchantAward *pbmerchant_award.MerchantAwardResponseDeleteAt) *response.MerchantAwardResponseDeleteAt
+	ToResponsesMerchantAwardDeleteAt(MerchantAwards []*pbmerchant_award.MerchantAwardResponseDeleteAt) []*response.MerchantAwardResponseDeleteAt
+	ToApiResponseMerchantAwardDeleteAt(pbResponse *pbmerchant_award.ApiResponseMerchantAwardDeleteAt) *response.ApiResponseMerchantAwardDeleteAt
+}

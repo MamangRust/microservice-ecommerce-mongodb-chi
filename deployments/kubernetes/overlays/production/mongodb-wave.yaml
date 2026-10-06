@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placeholder
+  annotations:
+    # Keenam instance MongoDB adalah dependency dari job migrate (wave 0) dan
+    # semua service aplikasi (wave 2), jadi harus dibuat lebih dulu di Sync
+    # phase. Sebelumnya MongoDB di luar cluster sehingga tidak punya wave.
+    argocd.argoproj.io/sync-wave: "-1"

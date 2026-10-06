@@ -1,0 +1,27 @@
+package merchantdocumentsapimapper
+
+import (
+	pbmerchant_document "github.com/MamangRust/microservice-ecommerce-grpc-pb/merchant_document"
+	"github.com/MamangRust/microservice-ecommerce-shared/domain/response"
+)
+
+type MerchantDocumentBaseResponseMapper interface {
+	MapMerchantDocument(doc *pbmerchant_document.MerchantDocument) *response.MerchantDocumentResponse
+	MapMerchantDocuments(docs []*pbmerchant_document.MerchantDocument) []*response.MerchantDocumentResponse
+	ToApiResponseMerchantDocument(doc *pbmerchant_document.ApiResponseMerchantDocument) *response.ApiResponseMerchantDocument
+}
+
+type MerchantDocumentQueryResponseMapper interface {
+	MerchantDocumentBaseResponseMapper
+	ToApiResponsesMerchantDocument(docs *pbmerchant_document.ApiResponsesMerchantDocument) *response.ApiResponsesMerchantDocument
+	ToApiResponsePaginationMerchantDocument(docs *pbmerchant_document.ApiResponsePaginationMerchantDocument) *response.ApiResponsePaginationMerchantDocument
+	ToApiResponsePaginationMerchantDocumentDeleteAt(docs *pbmerchant_document.ApiResponsePaginationMerchantDocumentAt) *response.ApiResponsePaginationMerchantDocumentDeleteAt
+}
+
+type MerchantDocumentCommandResponseMapper interface {
+	MerchantDocumentBaseResponseMapper
+	MapMerchantDocumentDeletedAt(doc *pbmerchant_document.MerchantDocumentDeleteAt) *response.MerchantDocumentResponseDeleteAt
+	MapMerchantDocumentsDeletedAt(docs []*pbmerchant_document.MerchantDocumentDeleteAt) []*response.MerchantDocumentResponseDeleteAt
+	ToApiResponseMerchantDocumentAll(resp *pbmerchant_document.ApiResponseMerchantDocumentAll) *response.ApiResponseMerchantDocumentAll
+	ToApiResponseMerchantDocumentDeleteAt(resp *pbmerchant_document.ApiResponseMerchantDocumentDelete) *response.ApiResponseMerchantDocumentDelete
+}

@@ -1,0 +1,333 @@
+# docker-compose.infra.yml — Infra-only stack for running Go services locally.
+#
+# Runs ONLY the infrastructure:
+#   Six standalone MongoDB instances (1 database = 1 MongoDB), Redis, Kafka
+#   (KRaft), ClickHouse, and optional observability tools.
+#
+# The Go services are NOT part of this compose file — they are started
+# locally via `go run service/<name>/cmd/main.go`.
+#
+# Usage:
+#   docker compose -f deployments/local/docker-compose.infra.yml up -d
+#   docker compose -f deployments/local/docker-compose.infra.yml down
+#   docker compose -f deployments/local/docker-compose.infra.yml --profile monitoring up -d
+
+name: ecommerce-infra
+
+services:
+  # 1 database = 1 MongoDB. Setiap bounded context punya server standalone-nya
+  # sendiri; tidak ada replica set dan tidak ada mongodb-init.
+  mongodb_identity:
+    image: mongo:7
+    container_name: ecommerce-mongodb-identity
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_identity_data:/data/db
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["--bind_ip_all"]
+
+  mongodb_catalog:
+    image: mongo:7
+    container_name: ecommerce-mongodb-catalog
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_catalog_data:/data/db
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["--bind_ip_all"]
+
+  mongodb_merchant:
+    image: mongo:7
+    container_name: ecommerce-mongodb-merchant
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongodb_merchant_data:/data/db
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["--bind_ip_all"]
+
+  mongodb_sales:
+    image: mongo:7
+    container_name: ecommerce-mongodb-sales
+    ports:
+      - "27020:27017"
+    volumes:
+      - mongodb_sales_data:/data/db
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["--bind_ip_all"]
+
+  mongodb_experience:
+    image: mongo:7
+    container_name: ecommerce-mongodb-experience
+    ports:
+      - "27021:27017"
+    volumes:
+      - mongodb_experience_data:/data/db
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["--bind_ip_all"]
+
+  mongodb_email:
+    image: mongo:7
+    container_name: ecommerce-mongodb-email
+    ports:
+      - "27022:27017"
+    volumes:
+      - mongodb_email_data:/data/db
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    command: ["--bind_ip_all"]
+
+  redis:
+    image: redis:7.4
+    container_name: redis-ecommerce-e2e
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_ecommerce_data:/data
+      - ../../redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    restart: unless-stopped
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a dragon_knight ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: my-kafka-ecommerce
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_NODE_ID=1
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_LISTENERS=CONTROLLER://0.0.0.0:9093,INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:19092,EXTERNAL://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+      - KAFKA_KRAFT_CLUSTER_ID=kraft-cluster-01
+      - KAFKA_LOG_DIRS=/tmp/kafka-data
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    container_name: kafka-exporter_ecommerce
+    ports:
+      - "9308:9308"
+    networks:
+      - app_ecommerce_network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command:
+      - "--kafka.server=kafka:19092"
+      - "--web.listen-address=0.0.0.0:9308"
+      - "--log.level=debug"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9308/metrics || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector-ecommerce
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ../../observability/otel-collector.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+      - "8889:8889"
+    networks:
+      - app_ecommerce_network
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: jaeger-ecommerce
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - app_ecommerce_network
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus_ecommerce
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../../observability/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - ../../observability/rules:/etc/prometheus/rules
+    networks:
+      - app_ecommerce_network
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_ecommerce
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
+    volumes:
+      - grafana_ecommerce-storage:/var/lib/grafana
+      - ../../observability/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ../../observability/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - app_ecommerce_network
+    depends_on:
+      - prometheus
+      - jaeger
+      - alertmanager
+      - loki
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager_ecommerce
+    volumes:
+      - ../../observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "9093:9093"
+    networks:
+      - app_ecommerce_network
+
+  loki:
+    container_name: loki_ecommerce
+    image: grafana/loki:2.9.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../../observability/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_ecommerce_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - app_ecommerce_network
+
+  promtail:
+    container_name: promtail_ecommerce
+    image: grafana/promtail:2.9.0
+    volumes:
+      - ../../observability/promtail-config.yaml:/etc/promtail/config.yaml
+      - ./logs:/var/log/app
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - app_ecommerce_network
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter
+    container_name: node-exporter_ecommerce
+    pid: "host"
+    networks:
+      - app_ecommerce_network
+    volumes:
+      - "/:/host:ro,rslave"
+    command:
+      - '--path.rootfs=/host'
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    container_name: clickhouse-ecommerce
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    environment:
+      CLICKHOUSE_DB: ecommerce
+      CLICKHOUSE_USER: dragon
+      CLICKHOUSE_PASSWORD: dragon_knight
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_ecommerce_data:/var/lib/clickhouse
+      - ../../pkg/clickhouse/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - app_ecommerce_network
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --user dragon --password dragon_knight --query 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mongodb_identity_data:
+  mongodb_catalog_data:
+  mongodb_merchant_data:
+  mongodb_sales_data:
+  mongodb_experience_data:
+  mongodb_email_data:
+  loki_ecommerce_data:
+  grafana_ecommerce-storage:
+  kafka_ecommerce_data:
+  redis_ecommerce_data:
+  clickhouse_ecommerce_data:
+
+networks:
+  app_ecommerce_network:
+    driver: bridge

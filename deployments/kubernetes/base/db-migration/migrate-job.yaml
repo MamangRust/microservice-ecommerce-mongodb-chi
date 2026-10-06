@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: ecommerce
+  labels:
+    app: migrate
+spec:
+  template:
+    metadata:
+      labels:
+        app: migrate
+    spec:
+      # MongoDB kini ikut di-deploy di cluster yang sama (base/mongodb/), jadi job
+      # ini menunggu keenam instance siap sebelum membuat index. Sebelumnya
+      # MongoDB diasumsikan sudah ada di luar cluster.
+      initContainers:
+        - name: wait-for-mongo
+          image: busybox:1.35
+          command: ["sh", "-c"]
+          args:
+            - |
+              echo "[INIT] Waiting for the six MongoDB instances..."
+              until nc -z mongodb-identity.ecommerce.svc.cluster.local 27017 \
+                && nc -z mongodb-catalog.ecommerce.svc.cluster.local 27017 \
+                && nc -z mongodb-merchant.ecommerce.svc.cluster.local 27017 \
+                && nc -z mongodb-sales.ecommerce.svc.cluster.local 27017 \
+                && nc -z mongodb-experience.ecommerce.svc.cluster.local 27017 \
+                && nc -z mongodb-email.ecommerce.svc.cluster.local 27017; do
+                echo "MongoDB not ready yet. Retrying in 5 seconds..."
+                sleep 5
+              done
+              echo "[INIT] All MongoDB instances are ready!"
+      containers:
+        - name: migrate
+          image: ghcr.io/__GHCR_OWNER__/vertx-ecommerce/db-migration:latest
+          workingDir: /app
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          imagePullPolicy: IfNotPresent
+      restartPolicy: OnFailure

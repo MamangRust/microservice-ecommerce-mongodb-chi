@@ -1,0 +1,26 @@
+package merchantbusinessapimapper
+
+import (
+	pbmerchant_business "github.com/MamangRust/microservice-ecommerce-grpc-pb/merchant_business"
+	"github.com/MamangRust/microservice-ecommerce-shared/domain/response"
+)
+
+type MerchantBusinessBaseResponseMapper interface {
+	ToResponseMerchantBusiness(merchant *pbmerchant_business.MerchantBusinessResponse) *response.MerchantBusinessResponse
+	ToResponsesMerchantBusiness(merchants []*pbmerchant_business.MerchantBusinessResponse) []*response.MerchantBusinessResponse
+	ToApiResponseMerchantBusiness(pbResponse *pbmerchant_business.ApiResponseMerchantBusiness) *response.ApiResponseMerchantBusiness
+}
+
+type MerchantBusinessQueryResponseMapper interface {
+	MerchantBusinessBaseResponseMapper
+	ToApiResponsesMerchantBusiness(pbResponse *pbmerchant_business.ApiResponsesMerchantBusiness) *response.ApiResponsesMerchantBusiness
+	ToApiResponsePaginationMerchantBusiness(pbResponse *pbmerchant_business.ApiResponsePaginationMerchantBusiness) *response.ApiResponsePaginationMerchantBusiness
+	ToApiResponsePaginationMerchantBusinessDeleteAt(pbResponse *pbmerchant_business.ApiResponsePaginationMerchantBusinessDeleteAt) *response.ApiResponsePaginationMerchantBusinessDeleteAt
+}
+
+type MerchantBusinessCommandResponseMapper interface {
+	MerchantBusinessBaseResponseMapper
+	ToResponseMerchantBusinessDeleteAt(merchant *pbmerchant_business.MerchantBusinessResponseDeleteAt) *response.MerchantBusinessResponseDeleteAt
+	ToResponsesMerchantBusinessDeleteAt(merchants []*pbmerchant_business.MerchantBusinessResponseDeleteAt) []*response.MerchantBusinessResponseDeleteAt
+	ToApiResponseMerchantBusinessDeleteAt(pbResponse *pbmerchant_business.ApiResponseMerchantBusinessDeleteAt) *response.ApiResponseMerchantBusinessDeleteAt
+}

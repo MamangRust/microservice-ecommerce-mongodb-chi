@@ -1,0 +1,48 @@
+package categoryapimapper
+
+import (
+	pbcategory "github.com/MamangRust/microservice-ecommerce-grpc-pb/category"
+	pbcatestats "github.com/MamangRust/microservice-ecommerce-grpc-pb/category"
+	"github.com/MamangRust/microservice-ecommerce-shared/domain/response"
+)
+
+type CategoryBaseResponseMapper interface {
+	ToResponseCategory(category *pbcategory.CategoryResponse) *response.CategoryResponse
+	ToResponsesCategory(categories []*pbcategory.CategoryResponse) []*response.CategoryResponse
+}
+
+type CategoryQueryResponseMapper interface {
+	CategoryBaseResponseMapper
+	CategoryStatsResponseMapper
+	ToApiResponseCategory(pbResponse *pbcategory.ApiResponseCategory) *response.ApiResponseCategory
+	ToApiResponsesCategory(pbResponse *pbcategory.ApiResponsesCategory) *response.ApiResponsesCategory
+	ToApiResponsePaginationCategory(pbResponse *pbcategory.ApiResponsePaginationCategory) *response.ApiResponsePaginationCategory
+	ToApiResponsePaginationCategoryDeleteAt(pbResponse *pbcategory.ApiResponsePaginationCategoryDeleteAt) *response.ApiResponsePaginationCategoryDeleteAt
+}
+
+type CategoryCommandResponseMapper interface {
+	CategoryBaseResponseMapper
+	ToResponseCategoryDelete(category *pbcategory.CategoryResponseDeleteAt) *response.CategoryResponseDeleteAt
+	ToResponsesCategoryDeleteAt(categories []*pbcategory.CategoryResponseDeleteAt) []*response.CategoryResponseDeleteAt
+	ToApiResponseCategoryDeleteAt(pbResponse *pbcategory.ApiResponseCategoryDeleteAt) *response.ApiResponseCategoryDeleteAt
+	ToApiResponseCategory(pbResponse *pbcategory.ApiResponseCategory) *response.ApiResponseCategory
+	ToApiResponseCategoryDelete(pbResponse *pbcategory.ApiResponseCategoryDelete) *response.ApiResponseCategoryDelete
+	ToApiResponseCategoryAll(pbResponse *pbcategory.ApiResponseCategoryAll) *response.ApiResponseCategoryAll
+	ToApiResponsePaginationCategoryDeleteAt(pbResponse *pbcategory.ApiResponsePaginationCategoryDeleteAt) *response.ApiResponsePaginationCategoryDeleteAt
+}
+
+type CategoryStatsResponseMapper interface {
+	ToResponseCategoryMonthlyPrice(category *pbcatestats.CategoryMonthPriceResponse) *response.CategoryMonthPriceResponse
+	ToResponseCategoryMonthlyPrices(c []*pbcatestats.CategoryMonthPriceResponse) []*response.CategoryMonthPriceResponse
+	ToResponseCategoryYearlyPrice(category *pbcatestats.CategoryYearPriceResponse) *response.CategoryYearPriceResponse
+	ToResponseCategoryYearlyPrices(c []*pbcatestats.CategoryYearPriceResponse) []*response.CategoryYearPriceResponse
+	ToResponseCashierMonthlyTotalPrice(c *pbcatestats.CategoriesMonthlyTotalPriceResponse) *response.CategoriesMonthlyTotalPriceResponse
+	ToResponseCategoryMonthlyTotalPrices(c []*pbcatestats.CategoriesMonthlyTotalPriceResponse) []*response.CategoriesMonthlyTotalPriceResponse
+	ToResponseCategoryYearlyTotalSale(c *pbcatestats.CategoriesYearlyTotalPriceResponse) *response.CategoriesYearlyTotalPriceResponse
+	ToResponseCategoryYearlyTotalPrices(c []*pbcatestats.CategoriesYearlyTotalPriceResponse) []*response.CategoriesYearlyTotalPriceResponse
+
+	ToApiResponseCategoryMonthPrice(pbResponse *pbcatestats.ApiResponseCategoryMonthPrice) *response.ApiResponseCategoryMonthPrice
+	ToApiResponseCategoryYearPrice(pbResponse *pbcatestats.ApiResponseCategoryYearPrice) *response.ApiResponseCategoryYearPrice
+	ToApiResponseCategoryMonthlyTotalPrice(pbResponse *pbcatestats.ApiResponseCategoryMonthlyTotalPrice) *response.ApiResponseCategoryMonthlyTotalPrice
+	ToApiResponseCategoryYearlyTotalPrice(pbResponse *pbcatestats.ApiResponseCategoryYearlyTotalPrice) *response.ApiResponseCategoryYearlyTotalPrice
+}

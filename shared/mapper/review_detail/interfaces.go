@@ -1,0 +1,27 @@
+package reviewdetailapimapper
+
+import (
+	pbreview_detail "github.com/MamangRust/microservice-ecommerce-grpc-pb/review_detail"
+	"github.com/MamangRust/microservice-ecommerce-shared/domain/response"
+)
+
+type ReviewDetailBaseResponseMapper interface {
+	ToResponseReviewDetail(reviewDetail *pbreview_detail.ReviewDetailsResponse) *response.ReviewDetailsResponse
+	ToResponsesReviewDetail(ReviewDetails []*pbreview_detail.ReviewDetailsResponse) []*response.ReviewDetailsResponse
+}
+
+type ReviewDetailQueryResponseMapper interface {
+	ReviewDetailBaseResponseMapper
+	ToApiResponseReviewDetail(pbResponse *pbreview_detail.ApiResponseReviewDetail) *response.ApiResponseReviewDetail
+	ToApiResponsesReviewDetail(pbResponse *pbreview_detail.ApiResponsesReviewDetails) *response.ApiResponsesReviewDetails
+	ToApiResponsePaginationReviewDetail(pbResponse *pbreview_detail.ApiResponsePaginationReviewDetails) *response.ApiResponsePaginationReviewDetails
+	ToApiResponsePaginationReviewDetailDeleteAt(pbResponse *pbreview_detail.ApiResponsePaginationReviewDetailsDeleteAt) *response.ApiResponsePaginationReviewDetailsDeleteAt
+}
+
+type ReviewDetailCommandResponseMapper interface {
+	ReviewDetailBaseResponseMapper
+	ToResponseReviewDetailDeleteAt(reviewDetail *pbreview_detail.ReviewDetailsResponseDeleteAt) *response.ReviewDetailsResponseDeleteAt
+	ToResponsesReviewDetailDeleteAt(ReviewDetails []*pbreview_detail.ReviewDetailsResponseDeleteAt) []*response.ReviewDetailsResponseDeleteAt
+	ToApiResponseReviewDetailDeleteAt(pbResponse *pbreview_detail.ApiResponseReviewDetailDeleteAt) *response.ApiResponseReviewDetailDeleteAt
+	ToApiResponsePaginationReviewDetailDeleteAt(pbResponse *pbreview_detail.ApiResponsePaginationReviewDetailsDeleteAt) *response.ApiResponsePaginationReviewDetailsDeleteAt
+}
